@@ -17,9 +17,10 @@
 // });
 
 const functions = require("firebase-functions");
-functions.region("asia-southeast2");
 
-exports.censor = functions.firestore
+exports.censor = functions
+    .region("asia-southeast2")
+    .firestore
     .document("chatRooms/{roomId}/messages/{msgId}")
     .onCreate((snap, context) => {
       const message = snap.data();
