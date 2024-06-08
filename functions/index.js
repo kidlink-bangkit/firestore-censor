@@ -24,6 +24,10 @@ const {getFirestore} = require("firebase-admin/firestore");
 initializeApp();
 const db = getFirestore();
 
+const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 exports.censor = functions
     .region("asia-southeast2")
     .firestore
@@ -34,6 +38,7 @@ exports.censor = functions
       if (message.messageText.includes("anjing")) {
         censor = "UNSAFE";
       }
+      await sleep(1000);
       const timestamp = Date.now();
       if (censor == "SAFE") {
         await db.collection("chatRooms")
