@@ -17,16 +17,32 @@
 // });
 
 const functions = require("firebase-functions");
+const {initializeApp} = require("firebase-admin/app");
+const {getFirestore} = require("firebase-admin/firestore");
+
+
+initializeApp();
+const db = getFirestore();
 
 exports.censor = functions
     .region("asia-southeast2")
     .firestore
     .document("chatRooms/{roomId}/messages/{msgId}")
-    .onCreate((snap, context) => {
+    .onCreate(async (snap, context) => {
       const message = snap.data();
       let censor = "SAFE";
       if (message.messageText.includes("anjing")) {
         censor = "UNSAFE";
       }
-      return snap.ref.update({censor: censor});
+      const timestamp = Date.now();
+      if (censor == "SAFE") {
+        await db.collection("chatRooms")
+            .doc(context.params.roomId)
+            .update({
+              lastMessageTimestamp: timestamp,
+              lastMessage: message.messageText,
+            });
+      }
+
+      return snap.ref.update({censor: censor, serverTimestamp: timestamp});
     });
