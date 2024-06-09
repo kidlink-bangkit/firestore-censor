@@ -7,7 +7,6 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 
@@ -19,34 +18,23 @@
 const functions = require("firebase-functions");
 const {initializeApp} = require("firebase-admin/app");
 const {getFirestore} = require("firebase-admin/firestore");
-
+const services = require("./services");
 
 initializeApp();
 const db = getFirestore();
 
-const sleep = (ms) => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
-
 exports.censor = functions
     .region("asia-southeast2")
-    .firestore
-    .document("chatRooms/{roomId}/messages/{msgId}")
+    .firestore.document("chatRooms/{roomId}/messages/{msgId}")
     .onCreate(async (snap, context) => {
       const message = snap.data();
-      let censor = "SAFE";
-      if (message.messageText.includes("anjing")) {
-        censor = "UNSAFE";
-      }
-      await sleep(1000);
+      const censor = await services.censor(message.messageText);
       const timestamp = Date.now();
       if (censor == "SAFE") {
-        await db.collection("chatRooms")
-            .doc(context.params.roomId)
-            .update({
-              lastMessageTimestamp: timestamp,
-              lastMessage: message.messageText,
-            });
+        await db.collection("chatRooms").doc(context.params.roomId).update({
+          lastMessageTimestamp: timestamp,
+          lastMessage: message.messageText,
+        });
       }
 
       return snap.ref.update({censor: censor, serverTimestamp: timestamp});
