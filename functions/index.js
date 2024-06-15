@@ -17,11 +17,9 @@
 
 const functions = require("firebase-functions");
 const {initializeApp} = require("firebase-admin/app");
-const {getFirestore} = require("firebase-admin/firestore");
 const services = require("./services");
 
 initializeApp();
-const db = getFirestore();
 
 exports.censor = functions
     .region("asia-southeast2")
@@ -30,12 +28,8 @@ exports.censor = functions
       const message = snap.data();
       const censor = await services.censor(message.messageText);
       const timestamp = Date.now();
-      if (censor == "SAFE") {
-        await db.collection("chatRooms").doc(context.params.roomId).update({
-          lastMessageTimestamp: timestamp,
-          lastMessage: message.messageText,
-        });
-      }
-
+      message.censor=censor;
+      message.timestamp = timestamp;
+      await services.updateChatLastMessage(message, context.params.roomId);
       return snap.ref.update({censor: censor, serverTimestamp: timestamp});
     });
